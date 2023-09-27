@@ -5,7 +5,7 @@ type QrCardProps = {
   time: string;
 };
 
-export const QrCard: React.FC<QrCardProps> = ({ imageURL, time }) => {
+export const QrCard: React.FC<QrCardProps> = ({ imageURL }) => {
   if (!imageURL) {
     return (
       <div>
@@ -23,8 +23,8 @@ export const QrCard: React.FC<QrCardProps> = ({ imageURL, time }) => {
         width={480}
         height={480}
       />
-      <p className="text-gray-400 text-sm italic">
-        QR code took {time} seconds to generate.
+      <p className="text-black-400 text-sm italic">
+        You can download the qr code with or withou password below.
       </p>
     </div>
   );

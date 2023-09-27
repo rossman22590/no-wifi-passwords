@@ -4,7 +4,8 @@ import { NextRequest } from 'next/server';
 // import { Ratelimit } from '@upstash/ratelimit';
 import { kv } from '@vercel/kv';
 import { put } from '@vercel/blob';
-import { nanoid } from '@/utils/utils';
+import { generateWifiStr, nanoid } from '@/utils/utils';
+import { createCanvas, loadImage } from 'canvas';
 
 /**
  * Validates a request object.
@@ -12,15 +13,6 @@ import { nanoid } from '@/utils/utils';
  * @param {QrGenerateRequest} request - The request object to be validated.
  * @throws {Error} Error message if URL or prompt is missing.
  */
-
-const validateRequest = (request: QrGenerateRequest) => {
-  if (!request.url) {
-    throw new Error('URL is required');
-  }
-  if (!request.prompt) {
-    throw new Error('Prompt is required');
-  }
-};
 
 // const ratelimit = new Ratelimit({
 //   redis: kv,
@@ -40,6 +32,85 @@ export async function POST(request: NextRequest) {
   //   });
   // }
 
+  // with color changing
+  const addTextToImg = async (props: {
+    imgUrl: string;
+    wifiName: string;
+    wifiPassword: string;
+    multiRender: boolean;
+  }): Promise<string[]> => {
+    function obfuscate(input: string): string {
+      return input.replace(/./g, '*');
+    }
+
+    const { imgUrl, wifiName, wifiPassword } = props;
+    const canvas = createCanvas(512, 512);
+    const ctx = canvas.getContext('2d');
+
+    // Load the image
+    const image = await loadImage(imgUrl);
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+
+    // Get image data
+    const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+
+    // Calculate the average brightness of the image
+    let totalBrightness = 0;
+    for (let i = 0; i < imageData.length; i += 4) {
+      // 4 channels: Red, Green, Blue, and Alpha
+      const red = imageData[i];
+      const green = imageData[i + 1];
+      const blue = imageData[i + 2];
+      totalBrightness += 0.299 * red + 0.587 * green + 0.114 * blue; // Standard luminance calculation
+    }
+
+    const averageBrightness = totalBrightness / (canvas.width * canvas.height);
+
+    // Choose text color based on average brightness
+    ctx.font = 'bold 25px Arial';
+    ctx.fillStyle = averageBrightness < 128 ? 'white' : 'black'; // If the average brightness is less than 128, choose white, else choose black.
+    ctx.textAlign = 'center';
+    ctx.fillText(
+      `u: ${wifiName} p: ${wifiPassword}`,
+      canvas.width / 2,
+      canvas.height - 20,
+    );
+
+    if (props.multiRender) {
+      // create a 2nd canvas
+      const canvas2 = createCanvas(512, 512);
+      const ctx2 = canvas2.getContext('2d');
+
+      // Load the image
+      const image2 = await loadImage(imgUrl);
+      ctx2.drawImage(image2, 0, 0, canvas.width, canvas.height);
+      // Choose text color based on average brightness
+      ctx2.font = 'bold 25px Arial';
+      ctx2.fillStyle = averageBrightness < 128 ? 'white' : 'black'; // If the average brightness is less than 128, choose white, else choose black.
+      ctx2.textAlign = 'center';
+      ctx2.fillText(
+        `u: ${wifiName} p: ${obfuscate(wifiPassword)}`,
+        canvas.width / 2,
+        canvas.height - 20,
+      );
+      return [canvas.toDataURL(), canvas2.toDataURL()];
+    }
+
+    return [canvas.toDataURL()];
+  };
+
+  const validateRequest = (request: QrGenerateRequest) => {
+    if (!request.wifi_name) {
+      throw new Error('wifi name is required');
+    }
+    if (!request.wifi_password) {
+      throw new Error('wifi password is required');
+    }
+    if (!request.prompt) {
+      throw new Error('Prompt is required');
+    }
+  };
+
   try {
     validateRequest(reqBody);
   } catch (e) {
@@ -48,37 +119,73 @@ export async function POST(request: NextRequest) {
     }
   }
 
-  const id = nanoid();
+  // adding a few more digits here to make it really hard to guess
+  const id = nanoid(12);
+
   const startTime = performance.now();
 
+  // has equal chance of being true or false
+  // const randomBool = Math.random() < 0.5 ? true : false;
+
+  // WFI:S:NETWORK;T:WPA;P:PASSWORD;H:;;
   let imageUrl = await replicateClient.generateQrCode({
-    url: reqBody.url,
+    url: generateWifiStr({
+      wifi_name: reqBody.wifi_name,
+      wifi_password: reqBody.wifi_password,
+      encrpytion: reqBody.encryption,
+    }),
+    scheduler: 'HeunDiscrete',
+    // scheduler: randomBool === true ? 'HeunDiscrete' : 'PNDM',
     prompt: reqBody.prompt,
     qr_conditioning_scale: 2,
+    image_resolution: 768,
     num_inference_steps: 30,
-    guidance_scale: 5,
+    guidance_scale: 9,
     negative_prompt:
-      'Longbody, lowres, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, blurry',
+      'Longbody, lowres, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, ugly, disfigured, low quality, blurry, nsfw',
   });
 
   const endTime = performance.now();
   const durationMS = endTime - startTime;
 
-  // convert output to a blob object
-  const file = await fetch(imageUrl).then((res) => res.blob());
+  const now = Date.now();
+  // we are rendeing one image with password and one with obfuscared
+  const [canvasImg, canvasImg2] = await addTextToImg({
+    imgUrl: imageUrl,
+    wifiName: reqBody.wifi_name,
+    wifiPassword: reqBody.wifi_password,
+    multiRender: true,
+  });
+  console.log('canvas time', Date.now() - now);
+
+  const [passwordFile, woPasswordFile] = await Promise.all([
+    fetch(canvasImg).then((res) => res.blob()),
+    fetch(canvasImg2).then((res) => res.blob()),
+  ]);
 
   // upload & store in Vercel Blob
-  const { url } = await put(`${id}.png`, file, { access: 'public' });
+  const [withPassword, woPassword] = await Promise.all([
+    put(`${id}.png`, passwordFile, {
+      access: 'public',
+    }),
+    put(`${id}.png`, woPasswordFile, {
+      access: 'public',
+    }),
+  ]);
 
   await kv.hset(id, {
     prompt: reqBody.prompt,
-    image: url,
-    website_url: reqBody.url,
+    passwordImg: withPassword.url,
+    displayImg: woPassword.url,
+    wifi_name: reqBody.wifi_name,
+    wifi_password: reqBody.wifi_password,
+    encryptionSelected: reqBody.encryption,
     model_latency: Math.round(durationMS),
   });
 
   const response: QrGenerateResponse = {
-    image_url: url,
+    image_url: woPassword.url,
+    download_url: withPassword.url,
     model_latency_ms: Math.round(durationMS),
     id: id,
   };
