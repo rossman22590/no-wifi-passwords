@@ -8,10 +8,10 @@ import { Analytics } from '@vercel/analytics/react';
 const inter = Inter({ subsets: ['latin'] });
 
 let title = 'Wifi QR Code Generator';
-let description = 'Generate your wifi qr code in seconds';
-let url = 'https://www.qrgpt.io';
-let ogimage = 'https://www.qrgpt.io/og-image.png';
-let sitename = 'qrGPT.io';
+let description = 'Generate WIFI qr code in seconds with cool artwork for free';
+let url = 'https://nopasswords.xyz';
+let ogimage = 'https://nopasswords.xyz/og-image.png';
+let sitename = 'nopasswords.xyz';
 
 export const metadata: Metadata = {
   metadataBase: new URL(url),

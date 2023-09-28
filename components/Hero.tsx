@@ -28,7 +28,7 @@ export default function Hero() {
             No More Wifi Passwords
           </h1>
           <h1 className="text-l text-gray-800 font-extrabold mx-auto sm:text-3xl">
-            1) create wifi qr code (with cool art)
+            1) create wifi qr code (with cool AI art)
           </h1>
           <h1 className="text-l text-gray-800 font-extrabold mx-auto sm:text-3xl">
             2) print it

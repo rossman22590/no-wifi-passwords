@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { imgUrl, wifiName, wifiPassword } = props;
-    const canvas = createCanvas(512, 512);
+    const canvas = createCanvas(600, 600);
     const ctx = canvas.getContext('2d');
 
     // Load the image
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     if (props.multiRender) {
       // create a 2nd canvas
-      const canvas2 = createCanvas(512, 512);
+      const canvas2 = createCanvas(600, 600);
       const ctx2 = canvas2.getContext('2d');
 
       // Load the image
@@ -118,12 +118,9 @@ export async function POST(request: NextRequest) {
       return new Response(e.message, { status: 400 });
     }
   }
-  console.log('xxxx 0');
 
   // adding a few more digits here to make it really hard to guess
   const id = nanoid(12);
-
-  console.log('xxxx 1', id);
 
   const startTime = performance.now();
 
@@ -131,27 +128,29 @@ export async function POST(request: NextRequest) {
   // const randomBool = Math.random() < 0.5 ? true : false;
 
   // WFI:S:NETWORK;T:WPA;P:PASSWORD;H:;;
+  const wifiCode = generateWifiStr({
+    wifi_name: reqBody.wifi_name,
+    wifi_password: reqBody.wifi_password,
+    encrpytion: reqBody.encryption,
+  });
+
   let imageUrl = await replicateClient.generateQrCode({
-    url: generateWifiStr({
-      wifi_name: reqBody.wifi_name,
-      wifi_password: reqBody.wifi_password,
-      encrpytion: reqBody.encryption,
-    }),
+    url: wifiCode,
     scheduler: 'HeunDiscrete',
     // scheduler: randomBool === true ? 'HeunDiscrete' : 'PNDM',
     prompt: reqBody.prompt,
     qr_conditioning_scale: 2,
-    image_resolution: 768,
+    // image_resolution: 768,
     num_inference_steps: 30,
     guidance_scale: 9,
     negative_prompt:
       'Longbody, lowres, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, ugly, disfigured, low quality, blurry, nsfw',
   });
 
-  console.log('xxxx 2', imageUrl?.length);
-
   const endTime = performance.now();
   const durationMS = endTime - startTime;
+
+  console.log('durationMS', durationMS);
 
   const now = Date.now();
   // we are rendeing one image with password and one with obfuscared
@@ -163,14 +162,10 @@ export async function POST(request: NextRequest) {
   });
   console.log('canvas time', Date.now() - now);
 
-  console.log('xxxx 3');
-
   const [passwordFile, woPasswordFile] = await Promise.all([
     fetch(canvasImg).then((res) => res.blob()),
     fetch(canvasImg2).then((res) => res.blob()),
   ]);
-
-  console.log('xxxx 4');
 
   // upload & store in Vercel Blob
   const [withPassword, woPassword] = await Promise.all([
@@ -181,8 +176,6 @@ export async function POST(request: NextRequest) {
       access: 'public',
     }),
   ]);
-
-  console.log('xxxx 5');
 
   await kv.hset(id, {
     prompt: reqBody.prompt,
@@ -200,8 +193,6 @@ export async function POST(request: NextRequest) {
     model_latency_ms: Math.round(durationMS),
     id: id,
   };
-
-  console.log('xxxx 6');
 
   return new Response(JSON.stringify(response), {
     status: 200,

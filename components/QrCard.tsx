@@ -24,7 +24,7 @@ export const QrCard: React.FC<QrCardProps> = ({ imageURL }) => {
         height={480}
       />
       <p className="text-black-400 text-sm italic">
-        You can download the qr code with or withou password below.
+        You can download the qr code with or without password below.
       </p>
     </div>
   );
