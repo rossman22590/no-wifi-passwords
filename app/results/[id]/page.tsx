@@ -28,9 +28,9 @@ export async function generateMetadata({
     return;
   }
 
-  const title = `QrGPT: ${data.prompt}`;
-  const description = `A QR code generated from qrGPT.io linking to: ${data.wifi_name}`;
-  const image = data.displayImg || 'https://qrGPT.io/og-image.png';
+  const title = `Wifi Qr Code Generator: ${data.prompt}`;
+  const description = `A QR code generated from nopasswords.xyz linking to: ${data.wifi_name}`;
+  const image = data.displayImg || 'https://nopasswords.xyz/og-image.png';
 
   return {
     title,
@@ -49,7 +49,7 @@ export async function generateMetadata({
       title,
       description,
       images: [image],
-      creator: '@nutlope',
+      creator: '@emergingbits',
     },
   };
 }

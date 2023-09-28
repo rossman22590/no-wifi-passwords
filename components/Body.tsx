@@ -38,13 +38,10 @@ const suggestions = [
   'italian mountains in a James Bond movie',
   'industrial age with plants',
   'spiritual wicked geometry patterns, colorful',
-  'rivers and streams in Peruvian forest with grass',
+  'rivers and streams in Peruvian forest',
   'waterfall in Bali with palm trees and ocean',
   'minimalist futuristic architecture',
   'futuristic robot creatures',
-  'painting of the mars, colorful planets and shooting stars',
-  'shooting stars in the milkyway, trippy sky, spinning round and round',
-  'a ship with neon lights going through a storm in the black sea',
 ];
 
 const encryptOptions = [
@@ -266,14 +263,14 @@ const Body = ({
                     </FormItem>
                   )}
                 />
-                <div className="my-2">
+                <div className="my-2 w-full">
                   <p className="text-sm font-medium mb-3">Prompt suggestions</p>
-                  <div className="grid sm:grid-cols-2 grid-cols-1 gap-3 text-center text-sm">
+                  <div className="grid sm:grid-cols-2 grid-cols-1 gap-3 text-center text-sm ">
                     <Select
                       onValueChange={(x) => handleSuggestionClick(x)}
                       disabled={isLoading}
                     >
-                      <SelectTrigger className="w-max">
+                      <SelectTrigger>
                         <SelectValue placeholder="for some inspiration..." />
                       </SelectTrigger>
                       <SelectContent>

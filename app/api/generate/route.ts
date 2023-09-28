@@ -44,7 +44,7 @@ export async function POST(request: NextRequest) {
     }
 
     const { imgUrl, wifiName, wifiPassword } = props;
-    const canvas = createCanvas(512, 512);
+    const canvas = createCanvas(600, 600);
     const ctx = canvas.getContext('2d');
 
     // Load the image
@@ -78,7 +78,7 @@ export async function POST(request: NextRequest) {
 
     if (props.multiRender) {
       // create a 2nd canvas
-      const canvas2 = createCanvas(512, 512);
+      const canvas2 = createCanvas(600, 600);
       const ctx2 = canvas2.getContext('2d');
 
       // Load the image
@@ -131,27 +131,31 @@ export async function POST(request: NextRequest) {
   // const randomBool = Math.random() < 0.5 ? true : false;
 
   // WFI:S:NETWORK;T:WPA;P:PASSWORD;H:;;
+  const wifiCode = generateWifiStr({
+    wifi_name: reqBody.wifi_name,
+    wifi_password: reqBody.wifi_password,
+    encrpytion: reqBody.encryption,
+  });
+
+  console.log('wifiCode ==>', wifiCode);
+
   let imageUrl = await replicateClient.generateQrCode({
-    url: generateWifiStr({
-      wifi_name: reqBody.wifi_name,
-      wifi_password: reqBody.wifi_password,
-      encrpytion: reqBody.encryption,
-    }),
+    url: wifiCode,
     scheduler: 'HeunDiscrete',
     // scheduler: randomBool === true ? 'HeunDiscrete' : 'PNDM',
     prompt: reqBody.prompt,
     qr_conditioning_scale: 2,
-    image_resolution: 768,
+    // image_resolution: 768,
     num_inference_steps: 30,
     guidance_scale: 9,
     negative_prompt:
       'Longbody, lowres, bad anatomy, bad hands, missing fingers, extra digit, fewer digits, cropped, worst quality, low quality, ugly, disfigured, low quality, blurry, nsfw',
   });
 
-  console.log('xxxx 2', imageUrl?.length);
-
   const endTime = performance.now();
   const durationMS = endTime - startTime;
+
+  console.log('durationMS', durationMS);
 
   const now = Date.now();
   // we are rendeing one image with password and one with obfuscared
