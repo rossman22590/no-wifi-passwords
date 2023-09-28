@@ -250,7 +250,7 @@ const Body = ({
                       <FormLabel>Prompt</FormLabel>
                       <FormControl>
                         <Textarea
-                          placeholder="A city view with clouds"
+                          placeholder="Japanese idyllic town"
                           className="resize-none"
                           {...field}
                         />

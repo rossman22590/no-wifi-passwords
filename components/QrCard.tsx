@@ -26,6 +26,9 @@ export const QrCard: React.FC<QrCardProps> = ({ imageURL }) => {
       <p className="text-black-400 text-sm italic">
         You can download the qr code with or without password below.
       </p>
+      <p className="text-black-400 text-sm italic">
+        Ocassionally the qr code is too obfuscated! In that case, try again!
+      </p>
     </div>
   );
 };
