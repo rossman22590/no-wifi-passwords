@@ -118,12 +118,9 @@ export async function POST(request: NextRequest) {
       return new Response(e.message, { status: 400 });
     }
   }
-  console.log('xxxx 0');
 
   // adding a few more digits here to make it really hard to guess
   const id = nanoid(12);
-
-  console.log('xxxx 1', id);
 
   const startTime = performance.now();
 
@@ -136,8 +133,6 @@ export async function POST(request: NextRequest) {
     wifi_password: reqBody.wifi_password,
     encrpytion: reqBody.encryption,
   });
-
-  console.log('wifiCode ==>', wifiCode);
 
   let imageUrl = await replicateClient.generateQrCode({
     url: wifiCode,
@@ -167,14 +162,10 @@ export async function POST(request: NextRequest) {
   });
   console.log('canvas time', Date.now() - now);
 
-  console.log('xxxx 3');
-
   const [passwordFile, woPasswordFile] = await Promise.all([
     fetch(canvasImg).then((res) => res.blob()),
     fetch(canvasImg2).then((res) => res.blob()),
   ]);
-
-  console.log('xxxx 4');
 
   // upload & store in Vercel Blob
   const [withPassword, woPassword] = await Promise.all([
@@ -185,8 +176,6 @@ export async function POST(request: NextRequest) {
       access: 'public',
     }),
   ]);
-
-  console.log('xxxx 5');
 
   await kv.hset(id, {
     prompt: reqBody.prompt,
@@ -204,8 +193,6 @@ export async function POST(request: NextRequest) {
     model_latency_ms: Math.round(durationMS),
     id: id,
   };
-
-  console.log('xxxx 6');
 
   return new Response(JSON.stringify(response), {
     status: 200,
